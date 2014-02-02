@@ -59,7 +59,13 @@ module Oink
   private
 
     def rails3_routing_info(env)
-      if env['action_dispatch.request.parameters']
+      if env['api.endpoint']
+        {
+          :request => grape_controller_action(env['api.endpoint']),
+          :path_info => grape_path_info(env['api.endpoint']),
+          :params => grape_request_params(env['api.endpoint'])
+        }
+      elsif env['action_dispatch.request.parameters']
         {
           :request => env['action_dispatch.request.parameters'],
           :path_info => env['PATH_INFO'],
@@ -98,6 +104,27 @@ module Oink
       end
 
       params
+    end
+
+    def grape_request_params(endpoint)
+      endpoint.env ? "#{endpoint.env['rack.request.query_hash']}" : ''
+    end
+
+    def grape_controller_action(endpoint)
+      request = {'controller' => '', 'action' => ''}
+      if grape_current_route(endpoint).match(/(.*)(\/(.*))/)
+        request = {'controller' => $1, 'action' => $3}
+      end
+
+      request
+    end
+
+    def grape_path_info(endpoint)
+      endpoint.env ? endpoint.env['PATH_INFO'] : grape_current_route(endpoint)
+    end
+
+    def grape_current_route(endpoint)
+      endpoint.routes.first.route_path[1..-1].sub(/\(\.:format\)\z/, '')
     end
 
   end
