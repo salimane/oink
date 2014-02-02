@@ -36,6 +36,7 @@ module Oink
         elsif info[:request]
           @logger.info("Oink Action: #{info[:request]['controller']}##{info[:request]['action']}")
         end
+        @logger.info("Oink Params: #{info[:params]}")
       end
     end
 
@@ -62,6 +63,7 @@ module Oink
         {
           :request => env['action_dispatch.request.parameters'],
           :path_info => env['PATH_INFO'],
+          :params => rails_request_params(env)
         }
       else
         nil
@@ -73,6 +75,7 @@ module Oink
         {
           :request => env['action_controller.request.path_parameters'],
           :path_info => env['PATH_INFO'],
+          :params => ''
         }
       else
         nil
@@ -81,6 +84,20 @@ module Oink
 
     def reset_objects_instantiated
       ActiveRecord::Base.reset_instance_type_count
+    end
+
+    def rails_request_params(env)
+      params = ''
+      if env['action_dispatch.request.request_parameters'] && \
+        env['action_dispatch.request.request_parameters'].length > 0
+        params = "#{env['action_dispatch.request.request_parameters']}"
+      end
+      if env['action_dispatch.request.query_parameters'] && \
+        env['action_dispatch.request.query_parameters'].length > 0
+        params = "#{params} #{env['action_dispatch.request.query_parameters']}"
+      end
+
+      params
     end
 
   end
